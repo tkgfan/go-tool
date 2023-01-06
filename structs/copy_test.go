@@ -5,124 +5,166 @@
 package structs
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
 
-type S1 struct {
-	Name  string
-	S1Age int
-}
-
-type S2 struct {
-	Name string
-}
-
-type S3 struct {
-	S3Name string
-}
-
-type S4 struct {
-	S3Arr []S3
-}
-
-type S5 struct {
-	S3Arr []S3
-}
-
-func TestDeepCopy(t *testing.T) {
-	src := []S1{{"s1", 11}, {"s11", 111}}
-	//var dst []S2
-	//err := CopyFields(&dst, src)
-	//if err != nil || !equals(dst, src) {
-	//	t.Error(err)
-	//}
-
-	src = append(src, S1{Name: "s3"})
-	dst2 := [3]S2{}
-	err2 := CopyFields(&dst2, src)
-	if err2 != nil {
-		t.Error(err2)
+type (
+	copyFieldsTest struct {
+		name     string
+		src      any
+		dst      any
+		expect   any
+		hasError bool
 	}
 
-	err3 := CopyFields(&dst2, src)
-	if err3 != nil {
-		t.Error(err3)
+	people struct {
+		Name          string
+		Age           int
+		Relationships []string
 	}
-	for i, _ := range dst2 {
-		if dst2[i].Name != src[i].Name {
-			t.Error(src[i], dst2[i])
+
+	man struct {
+		Name          string
+		Sex           int8
+		Age           int
+		Relationships []string
+	}
+
+	woman struct {
+		people
+		Sex int8
+	}
+
+	animal struct {
+		Name          int
+		Age           int
+		Relationships []int
+	}
+)
+
+func TestCopyFields(t *testing.T) {
+	tests := []copyFieldsTest{
+		{
+			name:     "值类型用例",
+			src:      people{Name: "people", Age: 18},
+			dst:      man{},
+			hasError: true,
+		},
+		{
+			name:     "正常复制结构体测试",
+			src:      people{Name: "people", Age: 18},
+			dst:      &man{},
+			expect:   &man{Name: "people", Age: 18},
+			hasError: false,
+		},
+		{
+			name:     "切片复制到切片",
+			src:      []people{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			dst:      &[]man{},
+			expect:   &[]man{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			hasError: false,
+		},
+		{
+			name:     "切片复制到数组",
+			src:      []people{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			dst:      &[2]man{},
+			expect:   &[2]man{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			hasError: false,
+		},
+		{
+			name:     "切片复制到数组 2",
+			src:      []people{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			dst:      &[3]man{},
+			expect:   &[3]man{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			hasError: false,
+		},
+		{
+			name:     "切片复制到容量不够的数组中",
+			src:      []people{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			dst:      &[1]man{},
+			hasError: true,
+		},
+		{
+			name:     "切片复制到接口数组中",
+			src:      []people{{Name: "p1", Age: 11}, {Name: "p2", Age: 22}},
+			dst:      &[3]any{},
+			expect:   &[3]any{people{Name: "p1", Age: 11}, people{Name: "p2", Age: 22}},
+			hasError: false,
+		},
+		{
+			name:     "类型不一致测试",
+			src:      []people{{Name: "p1", Age: 11}},
+			dst:      &people{},
+			hasError: true,
+		},
+		{
+			name:     "非结构体复制",
+			src:      []int{1, 2},
+			dst:      &[]int{},
+			hasError: true,
+		},
+		{
+			name:     "内嵌结构体复制",
+			src:      woman{people: people{Name: "woman", Age: 11}, Sex: 1},
+			dst:      &people{},
+			expect:   &people{Name: "woman", Age: 11},
+			hasError: false,
+		},
+		{
+			name:     "字段名相同类型不一致",
+			src:      people{Name: "people", Age: 11},
+			dst:      &animal{},
+			expect:   &animal{Age: 11},
+			hasError: false,
+		},
+		{
+			name:     "被复制实例不是结构体",
+			src:      11,
+			dst:      &man{},
+			hasError: true,
+		},
+		{
+			name:     "字段存在数组类型",
+			src:      people{Relationships: []string{"alice", "bob"}},
+			dst:      &man{},
+			expect:   &man{Relationships: []string{"alice", "bob"}},
+			hasError: false,
+		},
+		{
+			name:     "字段存在类型不相同的数组类型",
+			src:      people{Relationships: []string{"alice", "bob"}},
+			dst:      &animal{},
+			expect:   &animal{},
+			hasError: false,
+		},
+	}
+
+	executeTests(tests, t)
+}
+
+func executeTests(tests []copyFieldsTest, t *testing.T) {
+	for _, test := range tests {
+		err := CopyFields(test.dst, test.src)
+		if test.hasError {
+			if err == nil {
+				t.Errorf("%s ,需要抛出异常", test.name)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("%s , %+v", test.name, err)
+			}
+			if !reflect.DeepEqual(test.expect, test.dst) {
+				t.Errorf("%s , expect=%+v, got=%+v", test.name, test.expect, test.dst)
+			}
 		}
 	}
-
-	s4 := S4{
-		S3Arr: []S3{{"n1"}, {"n2"}},
-	}
-	s5 := &S5{}
-	err5 := CopyFields(s5, s4)
-	if err5 != nil {
-		fmt.Println(err5)
-	}
 }
 
-func equals(dst []S2, src []S1) bool {
-	for i, _ := range dst {
-		if dst[i].Name != src[i].Name {
-			return false
-		}
+func BenchmarkCopyFields(b *testing.B) {
+	src := people{Name: "people", Age: 18, Relationships: []string{"alice", "bob"}}
+	dst := &man{}
+	for i := 0; i < b.N; i++ {
+		CopyFields(dst, src)
 	}
-	return true
-}
-
-func TestCopyValue(t *testing.T) {
-	s1 := S1{"s1Name", 11}
-	s2 := S2{}
-	err := copyValue(reflect.ValueOf(&s2), reflect.ValueOf(s1))
-	if err != nil || s2.Name != s1.Name {
-		t.Error(err, s1, s2)
-	}
-}
-
-func TestCheckIfArrayOrSlice(t *testing.T) {
-	src := make([]S2, 2)
-
-	dst := [2]S1{}
-	if isArrayOrSlice, _ := typeCheck(dst, src); !isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为true，实际为false")
-	}
-	if isArrayOrSlice, _ := typeCheck(&dst, src); !isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为true，实际为false")
-	}
-	dst2 := [1]S1{}
-	if isArrayOrSlice, _ := typeCheck(dst2, src); !isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为true，实际为false")
-	}
-	if isArrayOrSlice, _ := typeCheck(&dst2, src); !isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为true，实际为false")
-	}
-
-	dst3 := S1{}
-	if isArrayOrSlice, _ := typeCheck(dst3, src); isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为false，实际为true")
-	}
-	if isArrayOrSlice, _ := typeCheck(&dst3, src); isArrayOrSlice {
-		t.Error("isArrayOrSlice 应该为false，实际为true")
-	}
-
-	dst4 := [2]S2{}
-	if _, err := typeCheck(dst4, src); err == nil {
-		t.Error("error 不应该为空")
-	}
-	if _, err := typeCheck(&dst4, src); err != nil {
-		t.Error("error 应该为空，但实际error为：", err)
-	}
-	dst5 := [1]S2{}
-	if _, err := typeCheck(dst5, src); err == nil {
-		t.Error("error 不应该为空")
-	}
-	if _, err := typeCheck(&dst5, src); err == nil {
-		t.Error("error 不应该为空")
-	}
-
 }
