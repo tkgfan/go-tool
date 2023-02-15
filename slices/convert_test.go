@@ -33,6 +33,16 @@ func TestToInterfaceSlice(t *testing.T) {
 			arg:    nil,
 			expect: []any{},
 		},
+		{
+			name:   "切片转换",
+			arg:    []cat{{Name: "alice", Age: 16}, {Name: "tkg", Age: 10}},
+			expect: []any{cat{Name: "alice", Age: 16}, cat{Name: "tkg", Age: 10}},
+		},
+		{
+			name:   "数组转换",
+			arg:    [2]cat{{Name: "alice", Age: 16}, {Name: "tkg", Age: 10}},
+			expect: []any{cat{Name: "alice", Age: 16}, cat{Name: "tkg", Age: 10}},
+		},
 	}
 
 	for _, test := range tests {

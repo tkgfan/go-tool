@@ -4,7 +4,7 @@
 package slices
 
 import (
-	"github.com/tkgfan/go-tool/judge"
+	"github.com/tkgfan/go-tool/structs"
 	"reflect"
 )
 
@@ -13,7 +13,7 @@ import (
 // 2. 如果 arg 非切片与数组类型，则转换为长度为1的 interface 切片。
 // 3. 如果 arg 为 nil 则返回长度为 0 的 interface 切片
 func ToInterfaceSlice(val any) (res []any) {
-	if judge.IsNil(val) {
+	if structs.IsNil(val) {
 		return make([]any, 0)
 	}
 
