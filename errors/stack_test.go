@@ -57,11 +57,9 @@ func TestStackError_Json(t *testing.T) {
 
 //goos: windows
 //goarch: amd64
-//pkg: github.com/tkgfan/go-tool/errors
 //cpu: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
 //BenchmarkStackError_Json
 //BenchmarkStackError_Json-8       1749685               579.2 ns/op
-//PASS
 func BenchmarkStackError_Json(b *testing.B) {
 	err := Wrapf(New("json test"), "wrap message")
 	st, _ := err.(*stackError)
