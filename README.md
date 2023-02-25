@@ -18,3 +18,8 @@ Go 实用工具
 - Wrapf(err error, format string, args ...any) error: 返回包含栈信息的 error。
 - Cause(err error) error: 返回由 errors.New、errors.Wrap、errors.Wrapf 中包裹的 cause error。普通 error 则返回其本身。
 - Json(err error) string: 返回 error 序列化为 JSON 的字符串，如果 error 实现了 Json 方法则调用 Json 方法返回字符串。
+
+## token
+
+- Rand(len int) string: 生成随机 token 字符串，len 为 token 长度。
+
